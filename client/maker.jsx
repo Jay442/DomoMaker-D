@@ -42,7 +42,6 @@ const DomoForm = (props) => {
 
 const DomoList = (props) => {
     const [domos, setDomos] = useState(props.domos);
-    const [reload, setReload] = useState(false);
 
     useEffect(() => {
         const loadDomosFromServer = async () => {
@@ -51,7 +50,7 @@ const DomoList = (props) => {
             setDomos(data.domos);
         };
         loadDomosFromServer();
-    }, [reload]);
+    }, [props.reloadDomos]);
 
     const deleteDomo = async (domoId) => {
         if (!confirm('Are you sure you want to delete this Domo?')) {
@@ -72,7 +71,13 @@ const DomoList = (props) => {
             if (result.error) {
                 alert(result.error);
             } else {
-                setReload(!reload);
+                if (props.triggerReload) {
+                    props.triggerReload();
+                } else {
+                    const response = await fetch('/getDomos');
+                    const data = await response.json();
+                    setDomos(data.domos);
+                }
             }
         } catch (err) {
             console.error('Error deleting domo:', err);
@@ -94,6 +99,7 @@ const DomoList = (props) => {
                 <img src="/assets/img/domoface.jpeg" alt="domo face" className='domoFace' />
                 <h3 className='domoName'>Name: {domo.name}</h3>
                 <h3 className='domoAge'>Age: {domo.age}</h3>
+                <h3 className='domoLevel'>Level: {domo.level}</h3>
                 <button
                     className='deleteDomoBtn'
                     onClick={() => deleteDomo(domo._id)}
@@ -114,13 +120,22 @@ const DomoList = (props) => {
 const App = () => {
     const [reloadDomos, setReloadDomos] = useState(false);
 
+    const triggerReload = () => {
+        setReloadDomos(prev => !prev);
+    };
+
     return (
         <div>
             <div id='makeDomo'>
-                <DomoForm triggerReload={() => setReloadDomos(!reloadDomos)} />
+                <DomoForm triggerReload={triggerReload} />
             </div>
             <div id='domos'>
-                <DomoList domos={[]} reloadDomos={reloadDomos} />
+                {/* Added triggerReload prop to DomoList */}
+                <DomoList 
+                    domos={[]} 
+                    reloadDomos={reloadDomos} 
+                    triggerReload={triggerReload} 
+                />
             </div>
         </div>
     )
